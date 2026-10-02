@@ -1,14 +1,14 @@
 # StreamWeave — the front end, explained
 
-Stage 1 of the compiler, both halves:
+The front-end of the compiler has two stages:
 
-- **Part I — the tokeniser** (stage 1a). Regex text in, a flat list of tokens out.
-- **Part II — the parser** (stage 1b). That token list in, an abstract syntax tree out.
+- **Part I — the Tokeniser** (stage 1a). Regex text is inputted, and a flat list of tokens is outputted.
+- **Part II — the Parser** (stage 1b). That token list inputted, and an abstract syntax tree outputted.
 
 
-**v1 supports the classic Thompson core and nothing else:** literals, concatenation, alternation
-`|`, grouping `()`, and Kleene star `*`. That is the exact language Thompson's 1968 construction was
-defined over, and it is enough to express every regular language.
+**This version supports the classic Thompson core and nothing else:** literals, concatenation, alternation
+`|`, grouping `()`, and Kleene star `*`. 
+That language is enough to express every regular language.
 
 ---
 
@@ -16,12 +16,10 @@ defined over, and it is enough to express every regular language.
 
 ## 1. What a tokeniser is
 
-A **tokeniser** (also called a *lexer* or *scanner*) is the first phase of nearly every compiler. Its
+A **tokeniser** is the first phase of nearly every compiler. Its
 job is to convert a flat string of characters into a flat list of **tokens** — meaningful units,
-each tagged with what kind of thing it is.
+each tagged with what kind of thing it is, and often it's value.
 
-The essential idea is that reading text has two separate difficulties, and it is much easier to
-solve them one at a time:
 
 1. **What are the pieces?** Is `\n` two characters or one newline byte? Is the `*` in `a\*b` an
    operator or a literal asterisk?
