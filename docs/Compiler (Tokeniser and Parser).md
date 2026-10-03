@@ -8,7 +8,7 @@ The front-end of the compiler has two stages:
 
 **This version supports the classic Thompson core and nothing else:** literals, concatenation, alternation
 `|`, grouping `()`, and Kleene star `*`. 
-That language is enough to express every regular language.
+This language is enough to express every regular language.
 
 ---
 
@@ -26,16 +26,16 @@ each tagged with what kind of thing it is, and often it's value.
 2. **How do the pieces fit together?** Does `ab|c*d` mean `(ab) | ((c*)d)` or something else? Are the
    parentheses balanced? Does that `*` have anything to repeat?
 
-Question 1 is **local**: you can answer it by looking at one character and the next adjacent character.
+Question 1 is **local** as you can answer it by looking at one character and the next adjacent character.
 Question 2
-is **structural**: it needs the whole shape of the input, and therefore is recursive. A tokeniser answers
+is **structural**: it requires the whole shape of the input, and is therefore recursive. A tokeniser answers
 question 1 and *only* question 1. The parser answers question 2, and gets to do so without ever
 thinking about character types.
 
 That split is the entire point:
 
 ```
-Pattern: a\*b   (means: 'a', then a real star character, then 'b')
+Pattern: a\*b   (means: 'a', then a literal star character, then 'b')
 
 without a tokeniser   parser sees:  'a' '\' '*' 'b'
                                     ...and must decide whether that '*' is an
@@ -48,8 +48,8 @@ with a tokeniser      parser sees:  CHAR CHAR CHAR EOF
                                     
 ```
 
-The parser's grammar is written based on the second alphabet. It is short 
-*because* it sorts only a few token types.
+The parser's grammar is written based on the second(tokensied) alphabet. It is short 
+*because* there are only few token types to sort.
 
 ### Tokens are values, not text
 
@@ -59,7 +59,7 @@ Each token is a small `Token` object, defined as a frozen dataclass.
 @dataclass(frozen=True)
 class Token:
     kind: TokenKind      # CHAR, PIPE, STAR, LPAREN, RPAREN, EOF
-    value: int | None    # the byte, for CHAR; None for all otheroperators
+    value: int | None    # the byte for type CHAR, and none for all other perators
     position: int        # 0-based index into the original pattern
 ```
 
@@ -108,8 +108,8 @@ is starting, so it keeps going. Otherwise the sequence has ended.
 
 The tokeniser always adds one `EOF` token at the end. This means the
 parser always has a next token to look at: when it sees `EOF`, it
-stops. Without it, every lookahead would need its own "am I past the
-end?" check, and missing one causes a crash.
+stops. Without it, every lookahead would need its own "I past the
+end or not?" check, and missing one causes a crash.
 
 ---
 
@@ -135,7 +135,7 @@ The main loop is a single left-to-right pass with a cursor `i`, which never back
 | 7–9 | 6–8 | `a` `b` `b` | literal bytes | `CHAR(97)@6` `CHAR(98)@7` `CHAR(98)@8` |
 | 10 | 9 | — | loop ends, append sentinel | `EOF@9` |
 
-From the CLI:
+Evidence of Results:
 
 ```
 $ python -m streamweave.tokenizer '(a|b)*abb'
@@ -155,7 +155,7 @@ $ python -m streamweave.tokenizer '(a|b)*abb'
 
 ---
 
-## 5. The code, function by function
+## 5. The code, and all functions explained
 
 ### `tokenize` — the main loop
 
@@ -181,10 +181,7 @@ Four branches, and every one is decided by **a single character**. Nothing looks
 character, and nothing ever backs up. That property is what makes this a tokeniser rather than a
 parser, and it is why the whole thing is O(n) with no state machine to speak of.
 
-Notice the shape `value, i = _scan_escape(pattern, i)`. The helper takes the cursor and returns the
-new cursor along with what it found. That keeps `i` as the single source of truth about how far we
-have read — no helper mutates shared state, so there is no way for two of them to disagree about
-where we are.
+Notice the assignment `value, i = _scan_escape(pattern, i)`. The helper returns the byte and the new position. There's no i += 1 here on purpose: the helper already set i, because only it knows whether the escape was 2 characters (\*) or 4 (\x41).
 
 ### `_scan_escape` — the only multi-character token
 
@@ -198,94 +195,99 @@ if char == "x":                return _scan_hex(pattern, i)           # \x41
 raise ParseError(f"unknown escape sequence '\\{char}'", pattern, i)
 ```
 
-`_META_ESCAPES` is deliberately **wider than the operator set**. It covers `+ ? . [ ] { } ^ $ -` as
-well as `* | ( ) \`, even though most of those are not operators in v1. The reason is that `+` and
-friends are *rejected* when bare, so without `\+` there would be no way at all to match a plus sign.
-The rule is: every byte the bare syntax refuses must still be writable with a backslash. There is a
-test enforcing exactly that.
-
-The mirror of this is `render_byte`, in the same module: it escapes exactly the same set on the way
-out, which is what makes the parser's `to_pattern` (Part II, §13) always emit source that parses
-back. Keeping both tables side by side is deliberate — they have to agree, so they live together.
+`_META_ESCAPES` includes characters like `+ ? . [ ] { } ^ $ -`,
+even though none of them are operators in v1. A operation `+` is
+rejected, so without `\+` there would be no way to match a plus
+sign. The rule: any character that is refused on its own can still
+be written with a backslash.
+to_pattern
+`render_byte` does the reverse, turning bytes back into pattern
+text, and escapes the same set of characters. This is why
+`to_pattern` always produces text that parses back correctly. The
+two tables live in the same file because they must always match.
 
 ---
 
 ## 6. What the tokeniser deliberately does *not* do
 
-This is a layering question, and getting it wrong is the most common way tokenisers turn into mud.
-
 **It does not reject the empty pattern.** `tokenize("")` returns `[EOF]`, which is the correct token
-stream for empty input — there were no tokens, and here is the sentinel. The empty regex is
+stream for empty input. There were no tokens, and here is the sentinel. The empty regex is
 forbidden by the *grammar*: `concatenation := repetition+` requires at least one operand. So the
 parser raises that error. Putting the check here would mean the tokeniser knows something about
 grammar, and the next person would not know where to look for it.
 
 **It does not check that parentheses balance.** `tokenize("(a")` happily returns `LPAREN CHAR EOF`.
-Balance is a *structural* property; it needs a stack or recursion, and the parser already has one.
+Balance is a *structural* property; it needs a recursion, and the parser already has one.
 
 **It does not check that `*` has an operand.** `tokenize("*a")` returns `STAR CHAR EOF`. That `*` has
 nothing to repeat, but discovering that requires knowing what an operand is.
 
-The rule: **the tokeniser reports lexical failures, the parser reports structural ones.** A lexical
-failure is one you can spot with a bounded window on the text — a trailing backslash, an unknown
-escape, a construct v1 does not implement. Everything that needs the shape of the whole pattern
-belongs downstream.
+The tokeniser only catches mistakes you can see in a few characters,
+like a `\` at the very end, an escape that doesn't exist, or a
+feature v1 doesn't support. Anything that depends on the overall
+shape of the pattern, such as brackets that don't match up, is the
+parser's job.
 
 ### Errors that name the construct
 
-`+`, `?`, `.`, `[`, `{`, `^` and `$` are all real regex syntax that v1 does not implement.
-Recognising them explicitly buys a message that says what you tried to do, rather than a confusing
-one about an unexpected character — and where there is a rewrite, it offers one:
+Some characters, like `+`, `?`, `.`, `[`, `{`, `^` and `$`, mean
+something in ordinary regex but aren't supported in v1. Rather than
+a vague "unexpected character" error, the tokeniser says which
+feature you tried to use, and suggests a workaround where one exists:
 
-```
-the '+' operator is not supported in v1 (write 'aa*' instead) at position 1
-  a+
-   ^
+    the '+' operator is not supported in v1 (write XX* instead of X+) at position 1
+      a+
+       ^
 
-character classes '[...]' are not supported in v1 at position 0
-  [a-z]
-  ^
-```
+    character classes '[...]' are not supported in v1 at position 0
+      [a-z]
+      ^
 
-Every error is a `ParseError` carrying `message`, `pattern` and `position`, and `__str__` renders the
-caret. No bare `Exception`, and no `assert` — `assert` is stripped under `python -O`, so validating
-user input with it means the validation silently vanishes in optimised runs.
+All errors are raised as a `ParseError`, which stores the message,
+the pattern and the position, and prints a `^` under the problem.
+User input is never checked with `assert`, because Python's `-O`
+flag removes asserts, and the checks would silently disappear.
 
 ---
 
 ## 7. Why this language, and what it costs
 
-The backend is a **one-hot NFA** (Sidhu–Prasanna, FCCM 2001): every NFA state gets its own flip-flop,
-and all states are evaluated in parallel each cycle. Roughly, one AST node costs one or two
-flip-flops. That turns front-end scope decisions into gate counts.
+## 7. Why this language, and what it costs
 
-The v1 language is exactly the four constructs Thompson's construction defines a rule for:
+The hardware is a one-hot NFA, where every NFA
+state is a flip-flop, and all of them update in parallel each clock.
+So each construct has a direct cost in hardware.
 
-| Construct | Thompson rule | Cost |
+v1 supports exactly the four constructs Thompson's construction
+defines a rule for:
+
+| Construct | Thompson rule | States added |
 |---|---|---|
-| `a` (literal) | one transition between two states | 2 flip-flops |
-| `ab` (concat) | wire the left fragment's exit to the right's entry | 0 extra |
-| `a\|b` (alternation) | a split state and a join state | 2 extra |
-| `a*` (star) | a loop-back edge plus a bypass edge | 2 extra |
+| `a` (literal) | one transition between two states | 2 |
+| `ab` (concatenation) | an ε edge joins the two parts | 0 |
+| `a\|b` (alternation) | a split state and a join state | 2 |
+| `a*` (star) | a loop-back edge and a bypass edge | 2 |
 
-One construct, one rule, no desugaring, no special cases. That is the smallest front end that can
-still express every regular language, which makes it the fastest honest route to a working
-end-to-end pipeline — parser to NFA to SystemVerilog to a passing cocotb run on real RTL.
+Four constructs, four rules, no special cases. That's enough to write
+almost any regular expression, and it's the quickest way to a working
+pipeline: parser, NFA, SystemVerilog, and a passing cocotb test on
+real RTL.
 
-**Everything dropped is a v2 feature, and they are not equally cheap to add back:**
+### Planned for v2
 
-- **`+` and `?` are nearly free.** `a+` is `a*` with the entry edge routed into the body first, and
-  `a?` is `a*` without the loop-back. Given their own AST nodes and their own Thompson rules, each
-  costs the *same* as `a*`. The trap is desugaring `a+` to `aa*`, which duplicates the whole
-  sub-NFA — `(abc)+` would cost 6 flip-flops instead of 3.
-- **Character classes are a large win, if done right.** `[a-z]` as a single node is **one transition
-  whose condition is a range comparator**: `(in_byte >= 8'h61) && (in_byte <= 8'h7a)` — two
-  comparisons, 2 flip-flops. Desugared into `a|b|…|z` it is 26 alternation branches, on the order of
-  **50+ flip-flops**. A ~25× difference for one bracket expression. Same argument for `.`, which as a
-  class is one always-true transition and as an alternation would be 256 branches.
+- **`+` and `?`.** `a+` is `a*` without the bypass; `a?` is `a*`
+  without the loop. Each gets its own rule and costs 2 states, the
+  same as `*`. Rewriting `X+` as `XX*` instead would copy the whole
+  of `X`: `(abc)+` would take 14 states instead of 8.
+- **Character classes and `.`.** `[a-z]` as one node is a single
+  transition that checks a range, `(in_byte >= 8'h61) && (in_byte <= 8'h7a)`,
+  for 2 states. Written as `a|b|…|z` it would take 102. `.` works
+  the same way: one transition that always matches, instead of 256
+  alternatives.
 
-So the ordering for v2 is: `+` and `?` first (trivial), then classes and `.` (more work in the
-tokeniser, large payoff in expressiveness at almost no hardware cost).
+`+` and `?` come first because they're easy. Classes and `.` need
+more work in the tokeniser, but give far more expressive power for
+almost no extra hardware.
 
 ---
 
@@ -352,9 +354,7 @@ rather than against `re`.
 # Part II — The parser
 
 Stage 1b: a flat list of tokens goes in, a **tree** comes out. Part I turned `(a|b)*abb` into a row
-of labelled pieces; this half works out how those pieces fit together.
-
-This part assumes you have never written a parser and are not especially comfortable with Python.
+of labelled pieces, and this section works out how those pieces fit together.
 
 ```
    "(a|b)*abb"
@@ -365,7 +365,7 @@ This part assumes you have never written a parser and are not especially comfort
         |
         |   stage 1b   parser.py          <-- structure appears here
         v
-   a tree
+     a tree
         |
         |   stage 2    thompson.py        epsilon-NFA
         v
@@ -374,9 +374,13 @@ This part assumes you have never written a parser and are not especially comfort
 
 ## 10. What a tree is, and why we need one
 
-A **tree** here just means: a thing made of boxes, where each box can hold other boxes inside it.
-Nothing more exotic. A folder on your computer is a tree — a folder holds files and other folders,
-which hold more files, and so on down.
+A **tree** is just something made of parts that contain smaller parts, like branches on a tree. Branches will have smaller
+branches attached...
+
+In the **AST**, each part is an operation, and the parts inside it are
+what it works on. In `(a|b)*`, the star contains an alternation,
+which contains `a` and `b`. The single characters are at the
+bottom, with nothing inside them.
 
 We need one because a regex is *nested* and a token list is *flat*. Look at two patterns:
 
@@ -385,8 +389,8 @@ We need one because a regex is *nested* and a token list is *flat*. Look at two 
    a(b|c)      means      a followed by (b or c)
 ```
 
-Both are five-ish tokens in a row. The difference is not *which* pieces are present — it is **which
-pieces belong to which**. A flat list cannot record that. A tree can:
+Both are five-ish tokens in a row. The difference is not *which* pieces are present. It is **which
+pieces are associated with which**. A flat list cannot record that. A tree can:
 
 ```
    ab|c                       a(b|c)
@@ -398,18 +402,16 @@ pieces belong to which**. A flat list cannot record that. A tree can:
    └── Char 'c'                   └── Char 'c'
 ```
 
-That is the whole point of this stage. Once the tree exists, every later stage can stop worrying
-about text: stage 2 never sees a `|` character, it sees an `Alt` box with two things inside it, and
-it knows exactly what to build for that.
+That is the whole point of this stage. Once the tree exists, every later stage does not need 
+to worry about text: stage 2 never sees a `|` character, it sees an `Alt` box with two things inside it, knows exactly
+how to build an NFA state machine.
 
-The tree is called an **abstract syntax tree**, or AST. *Syntax* because it records the structure of
+The tree is called an **Abstract Syntax Tree**, or AST. *Syntax* because it records the structure of
 what was written; *abstract* because it discards the bits of text that existed only to convey that
-structure. Parentheses are the clearest example — see §16.
+structure.
 
 ### The four kinds of box
 
-Exactly four, and that is not a simplification for this document — it is genuinely all the language
-has, and it matches Thompson's four construction rules one for one.
 
 | Box | Holds | Written in the regex as |
 |---|---|---|
@@ -418,8 +420,8 @@ has, and it matches Thompson's four construction rules one for one.
 | `Alt` | two boxes: `left`, `right` | `a\|b` |
 | `Star` | one box: `child` | `a*` |
 
-In Python they are *dataclasses*, which is a way of saying "a box with named slots" without writing
-much code:
+In Python, each node is a dataclass: a short way to define a class
+with named fields, without writing the setup code yourself.
 
 ```python
 @dataclass(frozen=True, repr=False)
@@ -428,15 +430,21 @@ class Star(Node):
     child: Node
 ```
 
-`frozen=True` means that once a box is built you cannot change what is inside it. That matters
-later: stage 2 holds subtrees while building NFA fragments, and nothing should alter one behind its
-back. It also gives us, free, the ability to compare two whole trees with `==` and get `True` only
-when they have exactly the same shape — which is what every test in `tests/test_parser.py` relies on.
+`frozen=True` means a node can't be changed after it's created. This
+matters in stage 2, which holds on to parts of the tree while it
+builds the NFA, and nothing should be able to change them halfway
+through. `repr=False` is there because the nodes have their own
+`__repr__`, which prints them more readably.
 
-**Binary, not n-ary**, deliberately. Thompson defines exactly one *two-input* rule for concatenation
-and one for alternation, so a binary node maps to one construction step with no loop in stage 2. An
-`Alt` holding a list of three branches would just force stage 2 to fold it into pairs anyway — the
-same tree, built later, with more code and more chances to be wrong.
+Dataclasses also come with `==`, which compares two trees to see 
+if have exactly the same
+shape, and that's what every test in `tests/test_parser.py` checks.
+
+`Concat` and `Alt` always have exactly two children. Thompson's rules
+for both take two inputs, so each node becomes one construction step
+in stage 2. If `Alt` held a list of three branches, stage 2 would
+just have to split it back into pairs, which is the same result with
+more code.
 
 ## 11. What a grammar is
 
