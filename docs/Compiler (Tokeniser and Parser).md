@@ -138,7 +138,7 @@ The main loop is a single left-to-right pass with a cursor `i`, which never back
 Evidence of Results:
 
 ```
-$ python -m streamweave.tokenizer '(a|b)*abb'
+$ python -m RegDetect.tokenizer '(a|b)*abb'
  pos  kind     value
 ----  -------  --------
    0  LPAREN
@@ -317,7 +317,7 @@ opaque `LPAREN`/`RPAREN` tokens for the parser to match up.
 It is circular: using a regex engine to build a regex compiler means the thing you are demonstrating
 is already done for you. It also imports the very semantics this project exists to avoid — `re`
 supports backreferences and lookahead, which are not regular. `re` is not imported anywhere in
-`streamweave/`.
+`RegDetect/`.
 
 **Why does every token carry a position?**
 So every error can point at the right column. A compiler that says "syntax error" without saying
@@ -346,7 +346,7 @@ Because `(a*)\1` is not a regular language, and this compiler's entire backend �
 construction to an NFA to one flip-flop per state — can only express regular languages. A
 backreference needs unbounded memory of *what* was matched, not just which states are live. A one-hot
 NFA has exactly one bit per state and nowhere to put matched text. This is a limitation of the
-machine, not of the parser, and it is why stage 5 compares against StreamWeave's own NFA simulator
+machine, not of the parser, and it is why stage 5 compares against RegDetect's own NFA simulator
 rather than against `re`.
 
 ---
@@ -697,7 +697,7 @@ parse_alternation                       cursor at 0
 Back in `parse`, the cursor is on `EOF`, so nothing is left over and the tree is returned:
 
 ```
-$ python -m streamweave.parser '(a|b)*abb'
+$ python -m RegDetect.parser '(a|b)*abb'
 Concat
 ├── Concat
 │   ├── Concat
@@ -785,7 +785,7 @@ separate reasons.
 **It means the same thing.** Concatenation is associative — `(ab)c` and `a(bc)` match exactly the
 same strings — so the two shapes describe the same language. The same is true of `|`.
 
-**It costs nothing in hardware.** This is the reason that actually matters for StreamWeave. In the
+**It costs nothing in hardware.** This is the reason that actually matters for RegDetect. In the
 one-hot backend, stage 2 allocates two flip-flops for each `Char`, `Alt` and `Star` box, and **zero**
 for a `Concat`:
 
@@ -967,7 +967,7 @@ implement; it is outside the class of languages the whole design can express.
 ## 22. Files
 
 ```
-streamweave/
+RegDetect/
 ├── __init__.py        empty (a docstring only)
 ├── tokenizer.py       stage 1a. ParseError, TokenKind, Token, tokenize, render_byte, dump, CLI
 └── parser.py          stage 1b. Char, Concat, Alt, Star, Parser, parse,
@@ -986,12 +986,12 @@ the `THE PARSER` banner is pure data with no parsing logic, so stage 2 can impor
 `Alt` and `Star` and ignore the `Parser` class entirely.
 
 `__init__.py` is deliberately empty. Re-exporting these names from it would make
-`python -m streamweave.tokenizer` load that module twice and emit a runpy warning, so callers import
+`python -m RegDetect.tokenizer` load that module twice and emit a runpy warning, so callers import
 from the submodules directly:
 
 ```python
-from streamweave.tokenizer import tokenize, ParseError
-from streamweave.parser import parse, pretty, size, state_estimate, to_pattern
+from RegDetect.tokenizer import tokenize, ParseError
+from RegDetect.parser import parse, pretty, size, state_estimate, to_pattern
 ```
 
 `parse(pattern) -> Node` is the entire public API of stage 1. Stage 2 imports only that function and
@@ -1000,8 +1000,8 @@ the four node classes.
 Try it:
 
 ```bash
-python -m streamweave.parser '(a|b)*abb'
-python -m streamweave.parser '(a'
+python -m RegDetect.parser '(a|b)*abb'
+python -m RegDetect.parser '(a'
 ```
 
 The first prints the tree, the box count and the flip-flop estimate. The second prints a caret under
