@@ -34,8 +34,8 @@ silently produce a machine that accepts the wrong language.
 
 Usage:
 
-    python -m streamweave.thompson '(a|b)*abb'
-    python -m streamweave.thompson '(a|b)*abb' aabb
+    python -m RegDetect.thompson '(a|b)*abb'
+    python -m RegDetect.thompson '(a|b)*abb' aabb
 """
 
 import sys
@@ -243,7 +243,7 @@ def main(argv: list[str]) -> int:
     """CLI: print the machine, and optionally test one string against it."""
     if len(argv) not in (2, 3):
         print(
-            "usage: python -m streamweave.thompson '<regex>' [text-to-test]",
+            "usage: python -m RegDetect.thompson '<regex>' [text-to-test]",
             file=sys.stderr,
         )
         return 2
