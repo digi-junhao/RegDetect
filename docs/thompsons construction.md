@@ -1,4 +1,4 @@
-# StreamWeave — Thompson construction, explained
+# Stage 2 — Thompson construction
 
 Stage 2 of the compiler: an **abstract syntax tree** goes in, an **epsilon-NFA** comes out.
 

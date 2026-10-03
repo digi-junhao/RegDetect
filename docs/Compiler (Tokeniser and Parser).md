@@ -1,4 +1,4 @@
-# StreamWeave - the front end, explained
+# Stage 1: The front end
 
 The front-end of the compiler has two stages:
 

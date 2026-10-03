@@ -1,4 +1,4 @@
-# StreamWeave — epsilon elimination, explained
+# Stage 3 — epsilon elimination
 
 Stage 3: an **epsilon-NFA** goes in, an **epsilon-free NFA** comes out. Same states, same numbering,
 same language — every edge now consumes exactly one byte.

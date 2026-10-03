@@ -29,7 +29,7 @@ from dataclasses import dataclass
 BYTE_MAX = 255
 
 try:                                            # keep the error hierarchy shared
-    from streamweave.errors import StreamWeaveError
+    from streamweave.errors import StreamWeaveError # type: ignore
 except ImportError:                             # standalone use
     class StreamWeaveError(Exception):
         """Base class for every StreamWeave compiler error."""
