@@ -671,16 +671,6 @@ RegDetect/
 
 ---
 
-## References
 
-- K. Thompson, "Regular Expression Search Algorithm", *Communications of the ACM*, 11(6), 1968.
-- R. Sidhu and V. K. Prasanna, "Fast Regular Expression Matching Using FPGAs", *IEEE FCCM*, 2001. [doi:10.1109/FCCM.2001.22](https://doi.org/10.1109/FCCM.2001.22)
-- The `(a|b)*abb` example is the classic one from Aho, Lam, Sethi and Ullman, *Compilers: Principles, Techniques, and Tools* (the Dragon Book).
 
-## About
 
-I'm Junhao Liu, a second-year Electronic and Information Engineering student at Imperial College London. If you spot something wrong, especially on the hardware side, please open an issue or message me on [LinkedIn](⟨your-linkedin-url⟩).
-
-## License
-
-MIT, see [LICENSE](LICENSE).
