@@ -1,4 +1,4 @@
-# StreamWeave
+# RegDetect
 
 A compiler that turns a regular expression into a hardware pattern detector. You give it a regex, it gives you a synthesisable SystemVerilog module that reads **one byte per clock cycle** and raises `match` whenever the pattern turns up in the stream. The compiler is plain Python (standard library only) and the target is an Intel MAX 10 FPGA on a Terasic DE10-Lite.
 
@@ -10,7 +10,7 @@ A compiler that turns a regular expression into a hardware pattern detector. You
 </p>
 
 ```bash
-python -m streamweave.codegen '(a|b)*abb' -o rtl/generated/pattern.sv
+python -m RegDetect.codegen '(a|b)*abb' -o rtl/generated/pattern.sv
 ```
 
 > [!NOTE]
@@ -49,8 +49,8 @@ I built this because I wanted one project that made me do both halves properly: 
 ## Quick start
 
 ```bash
-git clone https://github.com/⟨your-username⟩/streamweave.git
-cd streamweave
+git clone https://github.com/⟨your-username⟩/RegDetect.git
+cd RegDetect
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install pytest        # only needed for the tests, the compiler itself is stdlib only
@@ -60,20 +60,20 @@ pytest tests/
 Every stage has its own CLI, so you can watch a pattern go through the pipeline one step at a time. I use `(a|b)*abb` as the example everywhere (any string of a's and b's that ends in `abb`):
 
 ```bash
-python -m streamweave.tokenizer '(a|b)*abb'         # stage 1a: tokens
-python -m streamweave.parser    '(a|b)*abb'         # stage 1b: syntax tree
-python -m streamweave.thompson  '(a|b)*abb' aabb    # stage 2: ε-NFA, then runs it on "aabb"
-python -m streamweave.epsilon   '(a|b)*abb'         # stage 3: ε-free NFA
-python -m streamweave.codegen   '(a|b)*abb'         # stage 4: SystemVerilog to stdout
+python -m RegDetect.tokenizer '(a|b)*abb'         # stage 1a: tokens
+python -m RegDetect.parser    '(a|b)*abb'         # stage 1b: syntax tree
+python -m RegDetect.thompson  '(a|b)*abb' aabb    # stage 2: ε-NFA, then runs it on "aabb"
+python -m RegDetect.epsilon   '(a|b)*abb'         # stage 3: ε-free NFA
+python -m RegDetect.codegen   '(a|b)*abb'         # stage 4: SystemVerilog to stdout
 ```
 
 Code generation options:
 
 ```bash
-python -m streamweave.codegen '(a|b)*abb' -o rtl/generated/pattern.sv   # write to a file
-python -m streamweave.codegen '(a|b)*abb' --prune       # drop unreachable states (14 -> 6 flip-flops here)
-python -m streamweave.codegen '(a|b)*abb' --anchored    # only match from byte 0 (for verification)
-python -m streamweave.codegen '(a|b)*abb' -m my_matcher # custom module name
+python -m RegDetect.codegen '(a|b)*abb' -o rtl/generated/pattern.sv   # write to a file
+python -m RegDetect.codegen '(a|b)*abb' --prune       # drop unreachable states (14 -> 6 flip-flops here)
+python -m RegDetect.codegen '(a|b)*abb' --anchored    # only match from byte 0 (for verification)
+python -m RegDetect.codegen '(a|b)*abb' -m my_matcher # custom module name
 ```
 
 The SystemVerilog goes to stdout (or the `-o` file) and a one-line resource summary goes to stderr, so you still see the summary when you redirect the output.
@@ -88,7 +88,7 @@ A **finite automaton** is a fixed number of *states* joined up by *edges*, and e
 
 The **N** in NFA stands for *nondeterministic*. That sounds mysterious but it just means **the machine can be in several states at once**. If two edges leaving a state have the same byte on them, you take both. Nothing guesses and nothing backtracks, you just carry every possibility forward and see which ones survive.
 
-This is the NFA StreamWeave ends up with for `(a|b)*abb`, after stage 3 and `--prune` (so these six are the only states that can ever turn on):
+This is the NFA RegDetect ends up with for `(a|b)*abb`, after stage 3 and `--prune` (so these six are the only states that can ever turn on):
 
 ```mermaid
 flowchart LR
@@ -181,7 +181,7 @@ The parser prints this before an NFA or a single line of SystemVerilog exists. W
 
 ### 4. The compiler can't blow up either
 
-Thompson's construction is linear in the size of the regex, and ε-elimination is polynomial (one ε-closure per state). Subset construction can take exponential *time* as well as space. Nothing in StreamWeave's compiler is exponential, for any pattern.
+Thompson's construction is linear in the size of the regex, and ε-elimination is polynomial (one ε-closure per state). Subset construction can take exponential *time* as well as space. Nothing in RegDetect's compiler is exponential, for any pattern.
 
 ### 5. One flip-flop is one place in the regex
 
@@ -267,7 +267,7 @@ atom           :=  CHAR | '(' alternation ')'
 There's no precedence table anywhere in the code. Precedence falls out of the order the functions call each other: `parse_repetition` is called last, so it grabs its operand first, which is why `*` binds tighter than concatenation, and concatenation binds tighter than `|`. Took me a while to get my head round that one but it's quite neat once it clicks.
 
 ```
-$ python -m streamweave.parser '(a|b)*abb'
+$ python -m RegDetect.parser '(a|b)*abb'
 Concat
 ├── Concat
 │   ├── Concat
@@ -287,12 +287,12 @@ estimated NFA states: 14
 Errors point at the actual problem instead of just saying "syntax error":
 
 ```
-$ python -m streamweave.parser '(a'
+$ python -m RegDetect.parser '(a'
 unclosed '(' at position 0
   (a
   ^
 
-$ python -m streamweave.parser 'a+'
+$ python -m RegDetect.parser 'a+'
 the '+' operator is not supported in v1 (write XX* instead of X+) at position 1
   a+
    ^
@@ -500,7 +500,7 @@ This is `generate()` run on a hand-built 3-state NFA for `ab*a`, because it fits
 
 ```systemverilog
 // ==========================================================================
-// Generated by StreamWeave stage 4 (codegen.py). DO NOT EDIT BY HAND.
+// Generated by RegDetect stage 4 (codegen.py). DO NOT EDIT BY HAND.
 //   pattern        : ab*a
 //   mode           : streaming search
 //   flip-flops     : 3   (one per NFA state)
@@ -655,8 +655,8 @@ Stage 5 (in progress) is the hardware version of the same idea: a cocotb testben
 ## Repo layout
 
 ```
-streamweave/
-├── streamweave/        the compiler (Python 3.12, standard library only)
+RegDetect/
+├── RegDetect/        the compiler (Python 3.12, standard library only)
 │   ├── tokenizer.py      stage 1a  text   -> tokens
 │   ├── parser.py         stage 1b  tokens -> AST
 │   ├── thompson.py       stage 2   AST    -> ε-NFA
