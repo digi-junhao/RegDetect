@@ -1,4 +1,4 @@
-"""The StreamWeave regex tokeniser: pattern text in, flat token stream out.
+"""The RegDetect regex tokeniser: pattern text in, flat token stream out.
 
 v1 is the classic Thompson core -- literals, concatenation, `|`, `()` and `*`.
 Everything else (`+`, `?`, `.`, character classes, the `\\d \\w \\s` shorthands,
@@ -23,7 +23,7 @@ What the tokeniser deliberately does *not* decide:
 
 Usage:
 
-    python -m streamweave.tokenizer '(a|b)*abb'
+    python -m RegDetect.tokenizer '(a|b)*abb'
 """
 
 import enum
@@ -258,7 +258,7 @@ def dump(pattern: str) -> str:
 def main(argv: list[str]) -> int:
     """CLI: print the token table for one pattern. Returns a process exit code."""
     if len(argv) != 2:
-        print("usage: python -m streamweave.tokenizer '<regex>'", file=sys.stderr)
+        print("usage: python -m RegDetect.tokenizer '<regex>'", file=sys.stderr)
         return 2
     try:
         print(dump(argv[1]))
