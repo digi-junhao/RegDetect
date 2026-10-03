@@ -11,9 +11,9 @@ import itertools
 import pytest
 from test_thompson import ast_matches
 
-from streamweave.epsilon import EpsilonFreeNFA, compile_pattern, eliminate
-from streamweave.parser import parse
-from streamweave.thompson import SymbolEdge, build
+from RegDetect.epsilon import EpsilonFreeNFA, compile_pattern, eliminate
+from RegDetect.parser import parse
+from RegDetect.thompson import SymbolEdge, build
 
 
 # ================================================== what the rewrite preserves

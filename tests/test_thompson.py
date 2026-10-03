@@ -11,8 +11,8 @@ import itertools
 
 import pytest
 
-from streamweave.parser import Alt, Char, Concat, Node, Star, parse, state_estimate
-from streamweave.thompson import NFA, build, compile_pattern
+from RegDetect.parser import Alt, Char, Concat, Node, Star, parse, state_estimate
+from RegDetect.thompson import NFA, build, compile_pattern
 
 
 # ============================================================== the oracle

@@ -34,7 +34,7 @@ identities.
 
 Usage:
 
-    python -m streamweave.parser '(a|b)*abb'
+    python -m RegDetect.parser '(a|b)*abb'
 """
 
 import sys
@@ -395,7 +395,7 @@ def _children(node: Node) -> tuple[Node, ...]:
 def main(argv: list[str]) -> int:
     """CLI: print the tree, the node count and the flip-flop estimate."""
     if len(argv) != 2:
-        print("usage: python -m streamweave.parser '<regex>'", file=sys.stderr)
+        print("usage: python -m RegDetect.parser '<regex>'", file=sys.stderr)
         return 2
     try:
         node = parse(argv[1])
