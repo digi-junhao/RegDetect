@@ -235,7 +235,7 @@ states *before* descending, which is why the outermost numbers are the lowest:
 14 states, 5 symbol edges, 11 epsilon edges. From the CLI:
 
 ```
-$ python -m streamweave.thompson '(a|b)*abb'
+$ python -m RegDetect.thompson '(a|b)*abb'
 states: 14   start: 0   accept: 13
 symbol edges: 5   epsilon edges: 11
 
@@ -290,7 +290,7 @@ simultaneously the whole time. That is nondeterminism doing its job, and it is w
 is needed.
 
 ```bash
-python -m streamweave.thompson '(a|b)*abb' aabb
+python -m RegDetect.thompson '(a|b)*abb' aabb
 ```
 
 ## 6. Why epsilons are fine here and fatal in hardware
@@ -444,7 +444,7 @@ one of them changes the size of the machine.
 ## 10. Files
 
 ```
-streamweave/
+RegDetect/
 ├── __init__.py        empty (a docstring only)
 ├── tokenizer.py       stage 1a -- text -> tokens
 ├── parser.py          stage 1b -- tokens -> AST
@@ -465,9 +465,9 @@ comparable, and impossible to mutate behind stage 3's back.
 Try it:
 
 ```bash
-python -m streamweave.thompson 'a*'
-python -m streamweave.thompson '(a|b)*abb'
-python -m streamweave.thompson '(a|b)*abb' aabb
+python -m RegDetect.thompson 'a*'
+python -m RegDetect.thompson '(a|b)*abb'
+python -m RegDetect.thompson '(a|b)*abb' aabb
 ```
 
 The third prints the machine and then tells you whether the string matched.
