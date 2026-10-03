@@ -43,8 +43,8 @@ is the better deal: the OR is combinational and free, the reset is not.
 
 Usage:
 
-    python -m streamweave.epsilon '(a|b)*abb'
-    python -m streamweave.epsilon '(a|b)*abb' aabb
+    python -m RegDetect.epsilon '(a|b)*abb'
+    python -m RegDetect.epsilon '(a|b)*abb' aabb
 """
 
 import sys
@@ -201,7 +201,7 @@ def main(argv: list[str]) -> int:
     """CLI: print the epsilon-free machine, and optionally test one string."""
     if len(argv) not in (2, 3):
         print(
-            "usage: python -m streamweave.epsilon '<regex>' [text-to-test]",
+            "usage: python -m RegDetect.epsilon '<regex>' [text-to-test]",
             file=sys.stderr,
         )
         return 2
