@@ -154,7 +154,7 @@ outgoing `a` exactly when its closure contains state 2:
 | 3 | `{1,2,3}` | yes | `3 --a--> 3` | **yes** |
 
 ```
-$ python -m streamweave.epsilon 'a*'
+$ python -m RegDetect.epsilon 'a*'
 states: 4   start: 0   accepting: [0, 1, 3]
 symbol edges: 3   epsilon edges: 0   unreachable: 2
 
@@ -182,7 +182,7 @@ edges for more symbol edges. The state count — the flip-flop count — does no
 ## 6. Worked example: `(a|b)*abb`
 
 ```
-$ python -m streamweave.epsilon '(a|b)*abb'
+$ python -m RegDetect.epsilon '(a|b)*abb'
 states: 14   start: 0   accepting: [13]
 symbol edges: 22   epsilon edges: 0   unreachable: 8
 
@@ -323,7 +323,7 @@ set, so each state is enqueued at most once and the walk terminates after at mos
 ## 11. Files
 
 ```
-streamweave/
+RegDetect/
 ├── __init__.py        empty (a docstring only)
 ├── tokenizer.py       stage 1a -- text -> tokens
 ├── parser.py          stage 1b -- tokens -> AST
@@ -351,9 +351,9 @@ that can enter it, which is literally the next-state equation:
 Try it:
 
 ```bash
-python -m streamweave.epsilon 'a*'
-python -m streamweave.epsilon '(a|b)*abb'
-python -m streamweave.epsilon '(a|b)*abb' aabb
+python -m RegDetect.epsilon 'a*'
+python -m RegDetect.epsilon '(a|b)*abb'
+python -m RegDetect.epsilon '(a|b)*abb' aabb
 ```
 
 Run the stage 2 CLI on the same pattern first to see what changed.
