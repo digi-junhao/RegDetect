@@ -33,7 +33,7 @@ python -m RegDetect.codegen '(a|b)*abb' -o rtl/generated/pattern.sv
 
 ## What it does, and why
 
-Matching a regex in software is a loop: read a byte, work out which parts of the pattern you could be in the middle of, read the next byte. A more complicated pattern means more work per byte.
+Matching a regex in software is a loop, where you read a byte, work out which parts of the pattern you could be in the middle of, read the next byte. A more complicated pattern means more work per byte.
 
 Hardware doesn't have to loop. Every "place you could be in the pattern" (an NFA state) gets its own flip-flop, and all of them update in parallel on the same clock edge. So the detector takes one byte per clock no matter how complicated the pattern is. A harder pattern costs more *area*, not more *time*. The idea comes from Sidhu and Prasanna (2001), and variations of it get used for things like scanning network traffic at line rate.
 
@@ -52,7 +52,7 @@ pip install pytest        # only needed for the tests, the compiler itself is st
 pytest tests/
 ```
 
-Every stage has its own CLI, so you can watch a pattern go through the pipeline one step at a time. I use `(a|b)*abb` as the example everywhere (any string of a's and b's that ends in `abb`):
+Every stage has its own CLI, so you can watch a pattern go through the pipeline one step at a time.
 
 ```bash
 python -m RegDetect.tokenizer '(a|b)*abb'         # stage 1a: tokens
@@ -72,8 +72,6 @@ python -m RegDetect.codegen '(a|b)*abb' -m my_matcher # custom module name
 ```
 
 The SystemVerilog goes to stdout (or the `-o` file) and a one-line resource summary goes to stderr, so you still see the summary when you redirect the output.
-
-I develop in WSL2 (Ubuntu 24.04) with Python 3.12. The Python side should work on any OS with 3.12 but I haven't tried macOS. For stage 5 you'll also need Verilator and cocotb (I built Verilator from source).
 
 ---
 
