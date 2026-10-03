@@ -1,4 +1,4 @@
-# StreamWeave — the front end, explained
+# StreamWeave - the front end, explained
 
 The front-end of the compiler has two stages:
 
@@ -26,55 +26,60 @@ each tagged with what kind of thing it is, and often it's value.
 2. **How do the pieces fit together?** Does `ab|c*d` mean `(ab) | ((c*)d)` or something else? Are the
    parentheses balanced? Does that `*` have anything to repeat?
 
-Question 1 is **local**: you can answer it by looking at one character and maybe the next. Question 2
-is **structural**: it needs the whole shape of the input, and it needs recursion. A tokeniser answers
+Question 1 is **local**: you can answer it by looking at one character and the next adjacent character.
+Question 2
+is **structural**: it needs the whole shape of the input, and therefore is recursive. A tokeniser answers
 question 1 and *only* question 1. The parser answers question 2, and gets to do so without ever
-thinking about escape sequences again.
+thinking about character types.
 
 That split is the entire point:
 
 ```
+Pattern: a\*b   (means: 'a', then a real star character, then 'b')
+
 without a tokeniser   parser sees:  'a' '\' '*' 'b'
                                     ...and must decide whether that '*' is an
                                     operator while also tracking grammar.
 
 with a tokeniser      parser sees:  CHAR CHAR CHAR EOF
-                                    ...the escape is already resolved. The
-                                    middle token is the byte 42, full stop.
+                                    ... '\*' has already become one ordinary character, with a byte value of 42. There is no star token so the parser cannot mistake it for a repeat.
+
+**Note** EOF stands for end of input.                                    
+                                    
 ```
 
-The parser's grammar is written over that second alphabet. It is short and obviously correct
-*because* someone already dealt with the first one.
+The parser's grammar is written based on the second alphabet. It is short 
+*because* it sorts only a few token types.
 
 ### Tokens are values, not text
 
-A token is not a substring. It is a small record:
+Each token is a small `Token` object, defined as a frozen dataclass.
 
 ```python
 @dataclass(frozen=True)
 class Token:
     kind: TokenKind      # CHAR, PIPE, STAR, LPAREN, RPAREN, EOF
-    value: int | None    # the byte, for CHAR; None for operators
+    value: int | None    # the byte, for CHAR; None for all otheroperators
     position: int        # 0-based index into the original pattern
 ```
 
-- `kind` is what the parser branches on.
-- `value` is the payload, and it is **already decoded**. A `CHAR` token carries the integer `97`, not
-  the string `"a"` and not the two characters `"\\n"`. By the time the parser sees `\n`, it is the
-  number 10.
-- `position` is where it came from in the source. It exists for one reason: error messages. Every
-  error the compiler ever reports can point a caret at the exact column, and that only works if the
-  position rides along on the token from the moment it is created.
+- `kind` tells the parser what to do with the token.
+- `value` is the byte the token stands for, already decoded by the
+  tokeniser: `a` arrives as 97, `\n` as 10.
+- `position` is the column the token started at. Error messages use
+  it to put a `^` under the exact problem.
 
 ---
 
 ## 2. The alphabet is bytes
 
-The hardware consumes **one byte per clock cycle**. So the alphabet is the integers 0–255, and every
-symbol in this compiler is an `int`, never a `str`.
+The hardware reads **one byte per clock**, so every symbol is an `int`
+from 0 to 255. The tokeniser converts characters with `ord()` and
+rejects anything above 255, which matches Latin-1 encoding (`a` is 97).
 
-This is not pedantry. Storing `97` rather than `"a"` means the value hands straight to a comparator
-in stage 4 with no conversion, and it forces an honest error on input the machine cannot represent:
+Because symbols are already numbers, stage 4 can write them straight
+into the hardware's comparators. And a character the hardware can't
+represent is rejected up front, with a clear error:
 
 ```
 '€' is U+20AC, outside the 0..255 byte alphabet at position 1
@@ -97,20 +102,18 @@ There are six, and that is the whole language.
 | `RPAREN` | `)` | `None` |
 | `EOF` | end of input | `None` |
 
-Concatenation has no token because it has no syntax — it is implicit in adjacency. `ab` is two `CHAR`
-tokens sitting next to each other, and the parser infers the operator from the fact that a second
-operand showed up. This is why the grammar's concatenation rule loops on a *first-set* test ("can the
-next token start an atom?") rather than looking for an operator to consume.
+Concatenation ("a then b") has no syntax as it is implicit in adjacentcy. You just write `ab`. The parser can't look for an operator, instead, after each piece it
+peeks at the next token. If it's a character or `(`, another piece
+is starting, so it keeps going. Otherwise the sequence has ended.
 
-**`EOF` is always appended, exactly once.** It is a sentinel. Because it is guaranteed to be there,
-the parser's `peek()` can do `self.tokens[self.pos]` with no bounds check anywhere — it can never run
-off the end, because every valid position has a token and the last one says "stop". A parser without
-an EOF sentinel needs an `if self.pos < len(...)` guard at every single lookahead, and forgetting one
-is a classic crash.
+The tokeniser always adds one `EOF` token at the end. This means the
+parser always has a next token to look at: when it sees `EOF`, it
+stops. Without it, every lookahead would need its own "am I past the
+end?" check, and missing one causes a crash.
 
 ---
 
-## 4. Walkthrough: `tokenize("(a|b)*abb")`
+## 4. Tokeniser walkthrough: `tokenize("(a|b)*abb")`
 
 The source, indexed:
 
@@ -119,7 +122,7 @@ index:   0 1 2 3 4 5 6 7 8
 char:    ( a | b ) * a b b
 ```
 
-The main loop is a single left-to-right pass with a cursor `i`. It never backtracks.
+The main loop is a single left-to-right pass with a cursor `i`, which never backtracks.
 
 | step | `i` | sees | action | emits |
 |---|---|---|---|---|
