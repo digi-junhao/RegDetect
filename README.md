@@ -233,8 +233,8 @@ flowchart LR
 
 | Stage | File | In → out | Full walkthrough |
 |---|---|---|---|
-| 1a | `tokenizer.py` | text → tokens | [docs/frontend_walkthrough.md]|(docs/Tokeniser_and_Parser.md) |
-| 1b | `parser.py` | tokens → syntax tree (AST) | (docs/Tokeniser_and_Parser.md) |
+| 1a | `tokenizer.py` | text → tokens | [docs/frontend_walkthrough.md]|[(docs/Tokeniser_and_Parser.md)](docs/Tokeniser_and_Parser.md)|
+| 1b | `parser.py` | tokens → syntax tree (AST) | ([docs/Tokeniser_and_Parser.md](docs/Tokeniser_and_Parser.md)) |
 | 2 | `thompson.py` | AST → ε-NFA | [docs/thompson_walkthrough.md](docs/thompson_construction.md) |
 | 3 | `epsilon.py` | ε-NFA → ε-free NFA | [docs/epsilon_walkthrough.md](docs/epsilon_closure.md) |
 | 4 | `codegen.py` | ε-free NFA → SystemVerilog | [docs/codegen.md](docs/codegen.md) |
