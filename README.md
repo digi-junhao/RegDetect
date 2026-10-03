@@ -1,6 +1,6 @@
 # RegDetect
 
-A compiler that turns a regular expression into a hardware pattern detector. You give it a regex, it gives you a synthesisable SystemVerilog module that reads **one byte per clock cycle** and raises `match` whenever the pattern turns up in the stream. The compiler is plain Python (standard library only) and the target is an Intel MAX 10 FPGA on a Terasic DE10-Lite.
+RegDetect compiler that turns a regular expression into a hardware pattern detector. You give it a regex, it gives you a synthesisable SystemVerilog module that reads **one byte per clock cycle** and raises `match` whenever the pattern turns up in the stream. The compiler is plain Python (standard library only) and the target is an Intel MAX 10 FPGA on a Terasic DE10-Lite.
 
 <p>
   <img alt="Python 3.12" src="https://img.shields.io/badge/python-3.12-3776AB">
