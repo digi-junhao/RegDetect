@@ -1,4 +1,4 @@
-"""Tests for the StreamWeave regex parser.
+"""Tests for the RegDetect regex parser.
 
 Comparisons are exact AST equality -- frozen dataclasses give a structural
 `__eq__` -- never repr strings, so changing a `__repr__` cannot break the suite.
@@ -8,7 +8,7 @@ import itertools
 
 import pytest
 
-from streamweave.parser import (
+from RegDetect.parser import (
     Alt,
     Char,
     Concat,
@@ -19,7 +19,7 @@ from streamweave.parser import (
     state_estimate,
     to_pattern,
 )
-from streamweave.tokenizer import ParseError
+from RegDetect.tokenizer import ParseError
 
 
 def ch(char: str) -> Char:
@@ -303,8 +303,8 @@ def test_parser_does_not_revalidate_bytes():
 def test_parser_trusts_the_eof_sentinel():
     # Every pattern's token stream ends in exactly one EOF, which is why the
     # parser's peek() is a bare list index with no bounds check anywhere.
-    from streamweave.parser import Parser
-    from streamweave.tokenizer import TokenKind
+    from RegDetect.parser import Parser
+    from RegDetect.tokenizer import TokenKind
 
     parser = Parser("(a|b)*")
     assert parser.tokens[-1].kind is TokenKind.EOF
