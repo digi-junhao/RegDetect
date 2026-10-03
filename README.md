@@ -1,6 +1,6 @@
 # RegDetect
 
-RegDetect is compiler that turns a regular expression into a hardware pattern detector. You input a regular expression, and it gives you a synthesisable SystemVerilog module that reads **one byte per clock cycle** and raises `match` whenever the ReGex pattern turns up in the stream. 
+RegDetect is compiler that turns a regular expression(ReGex) into a hardware pattern detector. You input a regular expression, and it gives you a synthesisable SystemVerilog module that reads **one byte per clock cycle** and raises `match` whenever the ReGex pattern turns up in the stream. 
 
 <p>
   <img alt="Python 3.12" src="https://img.shields.io/badge/python-3.12-3776AB">
