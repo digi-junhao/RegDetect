@@ -11,9 +11,6 @@ RegDetect is compiler that turns a regular expression(ReGex) into a hardware pat
 python -m RegDetect.codegen '(a|b)*abb' -o rtl/generated/pattern.sv
 ```
 
-> [!NOTE]
-> **Where it's at (October 2026):** all four compiler stages work and are tested in Python. The SystemVerilog they produce has **not** been simulated yet. That's stage 5 (cocotb + Verilator) and it's what I'm working on now. Nothing has been through Quartus or onto the board either, so there are no Fmax or logic-element numbers in this README. That's on purpose, they go in once I've actually measured them.
-
 ## Contents
 
 - [What it does, and why](#what-it-does-and-why)
