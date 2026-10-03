@@ -4,9 +4,7 @@ RegDetect is compiler that turns a regular expression into a hardware pattern de
 
 <p>
   <img alt="Python 3.12" src="https://img.shields.io/badge/python-3.12-3776AB">
-  <img alt="Dependencies: standard library only" src="https://img.shields.io/badge/dependencies-stdlib%20only-2ea44f">
   <img alt="HDL: SystemVerilog" src="https://img.shields.io/badge/HDL-SystemVerilog-6f42c1">
-  <img alt="Status: work in progress" src="https://img.shields.io/badge/status-work%20in%20progress-orange">
 </p>
 
 ```bash
