@@ -40,7 +40,7 @@ Matching a regex in software is a loop: read a byte, work out which parts of the
 
 Hardware doesn't have to loop. Every "place you could be in the pattern" (an NFA state) gets its own flip-flop, and all of them update in parallel on the same clock edge. So the detector takes one byte per clock no matter how complicated the pattern is. A harder pattern costs more *area*, not more *time*. The idea comes from Sidhu and Prasanna (2001), and variations of it get used for things like scanning network traffic at line rate.
 
-I built this because I wanted one project that made me do both halves properly: the compiler and automata theory side, and real RTL that has to simulate, synthesise and meet timing. It's an independent project I started in summer 2026, between first and second year of EIE at Imperial. It isn't coursework.
+I built this because I wanted one project that made me do both halves properly: the compiler and automata theory side, and real RTL that has to simulate, synthesise and meet timing. It's an independent project I started in summer 2026, between first and second year of EIE at Imperial. 
 
 ---
 
