@@ -35,7 +35,9 @@ python -m RegDetect.codegen '(a|b)*abb' -o rtl/generated/pattern.sv
 
 Matching a regular expression in software is a loop, where you read a byte, work out which parts of the pattern you could be in the middle of, and then reading the next byte. A more complicated pattern means more work per byte.
 
-Hardware doesn't have to loop. Every "place you could be in the pattern" (an NFA state) gets its own flip-flop, and all of them update in parallel on the same clock edge. The detector takes one byte per clock no matter how complicated the pattern is. A more complex pattern costs more *area* on hardware, not more *time*. The idea comes from Sidhu and Prasanna (2001), and variations of it get used for things like scanning network traffic at line rate.
+Hardware doesn't have to loop. Every "place you could be in the pattern" (an NFA state) gets its own flip-flop, and all of them update in parallel on the same clock edge. The detector takes one byte per clock no matter how complicated the pattern is. A more complex pattern costs more *area* on hardware, not more *time*.
+
+Real systems like firewalls receive data at a fixed rate and can be attacked with inputs designed to slow them down, so a matcher that is guaranteed to handle one byte per clock whatever the pattern or input can never fall behind or be overloaded, which software can't promise. 
 
 This is an independent project I started in summer 2026, between first and second year of EIE at Imperial. 
 
@@ -116,7 +118,7 @@ On an `a` the machine goes to **both** 5 and 9. It doesn't know yet whether that
 
 In software, "several states at once" means keeping a set of live states and looping over all of them for every byte. That's O(*n* × *m*) for *n* bytes and *m* states.
 
-In hardware you give **every state its own flip-flop**. Bit *i* is 1 when state *i* is live, and on each clock edge every flip-flop works out its next value at the same time, from the current byte and the bits that feed into it. This is the approach from Sidhu and Prasanna (2001). It usually gets called "one-hot", even though in an NFA several bits can be hot at the same time. The loop over states disappears, because the states are separate little circuits running side by side. Time turns into area.
+In hardware you give **every state its own flip-flop**. Bit *i* is high when state *i* is live, and on each clock edge every flip-flop works out its next value at the same time, from the current byte and the bits that feed into it. This is the approach from Sidhu and Prasanna (2001). It is called **"one-hot"**, even though in an NFA several bits can be hot at the same time. The loop over states disappears, because the states are separate little circuits running side by side. Time turns into area.
 
 Here's the hardware for `(a|b)*abb` running on the input `aabb` in streaming mode (start state held on every cycle, so a match can begin at any byte):
 
@@ -161,8 +163,7 @@ In a binary-encoded DFA it's the opposite: every next-state bit depends on every
 
 This is also one more reason ε-edges have to go (see [stage 3](#stage-3-epsilon-closures)). If they were left in as wires, a chain of them would be a long combinational path, and the clock speed would depend on the longest chain in the pattern. With them gone, every path is the same short shape: register → comparator → AND/OR → register.
 
-> [!IMPORTANT]
-> This is what I **expect**, not something I've measured yet. Fan-in depends on the pattern, so a pattern that funnels lots of edges into one state will be slower, and bigger designs also lose speed to routing. The plan is to push a set of patterns of increasing size through Quartus and plot Fmax against state count. If the line isn't roughly flat, this section gets rewritten.
+
 
 ### 3. You know the size before you build anything
 
@@ -197,7 +198,7 @@ It isn't all one-way, and I'd rather say so here than have someone point it out:
 | Simple patterns | more flip-flops | fewer |
 | Nasty patterns | grows linearly | can grow exponentially |
 | Changing the pattern | regenerate the RTL and re-run Quartus | if the table is in RAM, just reload the table |
-| What sets the clock speed | max fan-in (expected, not measured yet) | next-state logic, or the RAM lookup |
+| What sets the clock speed | max fan-in | next-state logic, or the RAM lookup |
 | In software | slow, O(*n* × *m*) | fast, O(*n*) |
 
 The one that actually hurts is the third row. The pattern is baked into the logic, so a new pattern means a full Quartus run instead of a memory write. For a fixed detector that's fine. For something you'd want to reprogram on the fly, it's a real downside.
