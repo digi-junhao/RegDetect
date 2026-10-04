@@ -81,7 +81,7 @@ A **finite automaton** is a fixed number of *states* joined up by *edges*, and e
 
 The **N** in NFA stands for *nondeterministic*, which means **the machine can be in several states at once**. If two edges leaving a state have the same byte on them, you take both. The state machine does not guess or backtracks, you just carry every possibility forward and see which ones survive.
 
-This is the NFA RegDetect ends up with for `(a|b)*abb`, after stage 3 and `--prune` (so these six are the only states that can ever turn on):
+This is the NFA RegDetect ends up with for `(a|b)*abb`, after NFA construction and epsilon closure (so these six are the only states that can ever turn on):
 
 ```mermaid
 flowchart LR
