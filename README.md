@@ -77,9 +77,9 @@ The SystemVerilog goes to stdout (or the `-o` file) and a one-line resource summ
 
 ## NFAs, and how one becomes hardware
 
-A **finite automaton** is a fixed number of *states* joined up by *edges*, and each edge has a byte on it. You begin in the start state, and every byte you read moves you along an edge labelled with that byte. If you're sitting in an accept state when the input runs out, the input matched. The "finite" bit matters more than it sounds: the number of states is fixed when the machine is built, which is exactly what hardware needs, because the number of flip-flops is fixed at synthesis.
+A **finite automaton** is a fixed number of *states* joined up by *edges*, and each edge has a byte associated with it. You begin in the start state, and every byte you read moves you along an edge labelled with that byte. If you're sitting in an accept state, the input matched. The "finite" bit is important: the number of states is fixed when the machine is built, which is exactly what hardware needs, because the number of flip-flops is fixed at synthesis.
 
-The **N** in NFA stands for *nondeterministic*. That sounds mysterious but it just means **the machine can be in several states at once**. If two edges leaving a state have the same byte on them, you take both. Nothing guesses and nothing backtracks, you just carry every possibility forward and see which ones survive.
+The **N** in NFA stands for *nondeterministic*, which means **the machine can be in several states at once**. If two edges leaving a state have the same byte on them, you take both. The state machine does not guess or backtracks, you just carry every possibility forward and see which ones survive.
 
 This is the NFA RegDetect ends up with for `(a|b)*abb`, after stage 3 and `--prune` (so these six are the only states that can ever turn on):
 
